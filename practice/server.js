@@ -10,18 +10,36 @@ app.get("/api/v1/restaurants", async (req, res) => {
   console.log(results);
   res.status(200).json({
     status: "success",
-    data: {
-      restaurants: results.rows,
-    },
+    results: results.rows.length,
+    data: results.rows,
   });
 });
 
 app.get("/api/v1/restaurants/:id", async (req, res) => {
-  console.log(req.params);
+  const query = await db.query("SELECT * FROM restaurants WHERE id = $1", [
+    req.params.id,
+  ]);
+  if (query.rows.length === 0) {
+    return res.status(404).json({
+      status: "fail",
+      message: "Not found",
+    });
+  }
+  res.status(200).json({
+    status: "success",
+    data: query.rows[0],
+  });
 });
 
-app.post("/api/v1/restaurants", (req, res) => {
-  console.log(req.body);
+app.post("/api/v1/restaurants", async (req, res) => {
+  const query = await db.query(
+    "INSERT INTO restaurants (name, location, price_range) VALUES ($1, $2, $3) RETURNING *",
+    [req.body.name, req.body.location, req.body.price_range]
+  );
+  res.status(201).json({
+    status: "success",
+    data: query.rows[0],
+  });
 });
 
 app.put("/api/v1/restaurants/:id", (req, res) => {
